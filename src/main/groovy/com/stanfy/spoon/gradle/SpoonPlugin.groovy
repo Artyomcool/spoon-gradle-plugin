@@ -5,12 +5,18 @@ import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.api.TestVariant
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.plugins.JavaBasePlugin
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Gradle plugin for Spoon.
  */
 class SpoonPlugin implements Plugin<Project> {
+
+    /** Logger. */
+    private static final Logger LOG = LoggerFactory.getLogger(SpoonPlugin.class)
 
   /** Task name prefix. */
   private static final String TASK_PREFIX = "spoon"
@@ -29,11 +35,17 @@ class SpoonPlugin implements Plugin<Project> {
       description = "Runs all the instrumentation test variations on all the connected devices"
     }
 
+    def spoonAnalyzedTask = project.task("spoonAnalyzed") {
+      group = JavaBasePlugin.VERIFICATION_GROUP
+      description = "Runs all the instrumentation test variations on all the connected devices with analyzing classes" +
+              "for optionally clearing data and killing the app"
+    }
+
     AppExtension android = project.android
     android.testVariants.all { TestVariant variant ->
 
       String taskName = "${TASK_PREFIX}${variant.name.capitalize()}"
-      SpoonRunTask task = createTask(taskName, variant, project)
+      Task task = createTask(taskName, variant, project)
 
       task.configure {
         title = "$project.name $variant.name"
@@ -41,6 +53,16 @@ class SpoonPlugin implements Plugin<Project> {
       }
 
       spoonTask.dependsOn task
+
+      //def dir = variant.javaCompile.destinationDir
+      String analyzedTaskName = "${TASK_PREFIX}Analyzed${variant.name.capitalize()}"
+      Task analyzedTask = createAnalyzedTask(analyzedTaskName, variant, project)
+      analyzedTask.configure {
+        title = "$project.name $variant.name"
+        description = "Runs instrumentation tests on all the connected devices for '${variant.name}' variation and generates a report with screenshots, performs analyze of test allowing to clear data or kill the app"
+      }
+
+      spoonAnalyzedTask.dependsOn analyzedTask
 
       project.tasks.addRule(patternString(taskName)) { String ruleTaskName ->
         if (ruleTaskName.startsWith(taskName)) {
@@ -70,6 +92,27 @@ class SpoonPlugin implements Plugin<Project> {
         }
       }
     }
+
+    def orderedTests = project.container(SpoonOrderedTests)
+    project.extensions.add "orderedTests", orderedTests
+
+    orderedTests.all { SpoonOrderedTests tests ->
+      def name = tests.name
+      def spoonOrderedTask = project.task("spoonOrdered${name.capitalize()}")
+      spoonOrderedTask.configure {
+        description = "Runs instrumentation tests on all the connected devices and generates a report with screenshots with specified order, performs analyze of test allowing to clear data or kill the app"
+      }
+      android.testVariants.all { TestVariant variant ->
+        Task task = createAnalyzedTask("spoonOrdered${name.capitalize()}${variant.name.capitalize()}", variant, project)
+        task.configure {
+          title = "$project.name $name ${variant.name}"
+          description = "Runs instrumentation tests on all the connected devices and generates a report with screenshots with specified order, performs analyze of test allowing to clear data or kill the app"
+        }
+        task.orderedTestClasses = tests.classes.collect { "${tests.suffix}.${it}" }
+        spoonOrderedTask.dependsOn task
+      }
+    }
+
   }
 
   private static boolean isValidSize(String size) {
@@ -85,8 +128,32 @@ class SpoonPlugin implements Plugin<Project> {
   }
 
   private static SpoonRunTask createTask(final String name, final TestVariant variant, final Project project) {
+    SpoonRunTask task = createBaseTask(name, variant, project, SpoonRunTask)
+
+    task.configure {
+      if (project.spoon.className) {
+        className = project.spoon.className
+        if (project.spoon.methodName) {
+          methodName = project.spoon.methodName
+        }
+      }
+    }
+  }
+
+  private static SpoonAnalyzedRunTask createAnalyzedTask(String name, TestVariant variant, Project project) {
+    SpoonAnalyzedRunTask task = createBaseTask(name, variant, project, SpoonAnalyzedRunTask)
+
+    task.outputs.upToDateWhen { false }
+    task.configure {
+      testClasses = variant.javaCompile.destinationDir
+      packageName = variant.testedVariant.packageName
+      orderedTestClasses = []
+    }
+  }
+
+  private static <E extends Task> E createBaseTask(String name, TestVariant variant, Project project, Class<E> clazz) {
     SpoonExtension config = project.spoon
-    SpoonRunTask task = project.tasks.create(name, SpoonRunTask)
+    E task = project.tasks.create(name, clazz)
 
     task.configure {
       group = JavaBasePlugin.VERIFICATION_GROUP
@@ -105,15 +172,6 @@ class SpoonPlugin implements Plugin<Project> {
       allDevices = !config.devices
       noAnimations = config.noAnimations
       failIfNoDeviceConnected = project.spoon.failIfNoDeviceConnected
-
-      testSize = SpoonRunTask.TEST_SIZE_ALL
-
-      if (project.spoon.className) {
-        className = project.spoon.className
-        if (project.spoon.methodName) {
-          methodName = project.spoon.methodName
-        }
-      }
 
       dependsOn variant.assemble, variant.testedVariant.assemble
     }
