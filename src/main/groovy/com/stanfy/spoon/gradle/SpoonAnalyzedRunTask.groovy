@@ -179,8 +179,8 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
       }
 
       classesToRun.each {
+        def name = it.name
         if (orderedTestClasses) {
-          def name = it.name
           if (!orderedTestClasses.find { it.contentEquals(name) }) {
             return
           }
@@ -188,7 +188,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
 
         Analyze analyze = it.getAnnotation(Analyze) as Analyze
 
-        def methods = it.declaredMethods
+        def methods = it.methods
         if (analyze) {
           if (!analyze.respectTestsOrder()) {
             methods = methods.sort { a, b ->
@@ -200,7 +200,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             }
           }
         } else {
-          runner.runTests(it.name)
+          runner.runTests(name)
           return
         }
 
@@ -211,7 +211,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             } else if (analyze.forceStopAllTests() || method.hasAnnotation(ForceStop)) {
               runner.forceStop packageName
             }
-            runner.runTests(method.declaringClass.name, method.name)
+            runner.runTests(name, method.name)
           }
         }
       }
