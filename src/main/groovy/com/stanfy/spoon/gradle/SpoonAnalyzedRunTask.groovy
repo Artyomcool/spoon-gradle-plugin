@@ -173,9 +173,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
 
         def stop1 = analyze1.forceStopAllTests()
         def stop2 = analyze2.forceStopAllTests()
-        if (stop1 != stop2) {
-          return -Boolean.compare(stop1, stop2)
-        }
+        return -Boolean.compare(stop1, stop2)
       }
 
       classesToRun.each {
@@ -187,21 +185,20 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         }
 
         Analyze analyze = it.getAnnotation(Analyze) as Analyze
-
-        def methods = it.methods
-        if (analyze) {
-          if (!analyze.respectTestsOrder()) {
-            methods = methods.sort { a, b ->
-              def res = -Boolean.compare(a.hasAnnotation(ClearData), b.hasAnnotation(ClearData))
-              if (res != 0) {
-                return res
-              }
-              return -Boolean.compare(a.hasAnnotation(ForceStop), b.hasAnnotation(ForceStop))
-            }
-          }
-        } else {
+        if (!analyze) {
           runner.runTests(name)
           return
+        }
+
+        def methods = it.methods
+        if (!analyze.respectTestsOrder()) {
+          methods = methods.sort { a, b ->
+            def res = -Boolean.compare(a.hasAnnotation(ClearData), b.hasAnnotation(ClearData))
+            if (res != 0) {
+              return res
+            }
+            return -Boolean.compare(a.hasAnnotation(ForceStop), b.hasAnnotation(ForceStop))
+          }
         }
 
         methods.each { method ->
