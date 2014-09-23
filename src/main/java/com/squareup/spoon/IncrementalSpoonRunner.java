@@ -41,7 +41,8 @@ public class IncrementalSpoonRunner {
 	private final boolean failIfNoDeviceConnected;
 	private AndroidDebugBridge adb;
 	private SpoonSummary.Builder summary;
-	private final Map<String, IncrementalSpoonDeviceRunner> testRunners = new HashMap<>();
+	private final Map<String, IncrementalSpoonDeviceRunner> testRunners =
+            new HashMap<String, IncrementalSpoonDeviceRunner>();
 
 	private IncrementalSpoonRunner(String title, File androidSdk, File applicationApk, File instrumentationApk,
 								   File output, boolean debug, boolean noAnimations, int adbTimeout, Set<String> serials,
@@ -275,7 +276,7 @@ public class IncrementalSpoonRunner {
 			if (this.androidSdk == null) {
 				throw new IllegalStateException("SDK must be set before calling this method.");
 			}
-			this.serials = new HashSet<>();
+			this.serials = new HashSet<String>();
 			return this;
 		}
 

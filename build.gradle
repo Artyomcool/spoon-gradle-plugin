@@ -11,6 +11,9 @@ apply plugin: 'groovy'
 apply plugin: 'nexus'
 apply plugin: 'project-report'
 
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
 allprojects {
   group = 'com.stanfy.spoon'
   version = '0.10.4-SNAPSHOT'

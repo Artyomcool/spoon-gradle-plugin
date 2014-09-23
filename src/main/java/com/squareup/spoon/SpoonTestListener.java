@@ -14,7 +14,8 @@ import static com.squareup.spoon.SpoonLogger.logError;
 /** Marshals an {@link ITestRunListener}'s output to a {@link DeviceResult.Builder}. */
 final class SpoonTestListener implements ITestRunListener {
 	private final DeviceResult.Builder result;
-	private final Map<TestIdentifier, DeviceTestResult.Builder> methodResults = new HashMap<>();
+	private final Map<TestIdentifier, DeviceTestResult.Builder> methodResults =
+            new HashMap<TestIdentifier, DeviceTestResult.Builder>();
 	private final boolean debug;
 	private final TestIdentifierAdapter testIdentifierAdapter;
 
