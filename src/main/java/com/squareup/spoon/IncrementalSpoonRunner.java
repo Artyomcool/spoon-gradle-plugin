@@ -102,17 +102,21 @@ public class IncrementalSpoonRunner {
 			IncrementalSpoonDeviceRunner testRunner = getTestRunner(serial, testInfo);
 			testRunners.put(serial, testRunner);
 			IDevice device = SpoonUtils.obtainRealDevice(adb, serial);
-			testRunner.install(device);
+			if (!testRunner.install(device)) {
+                throw new RuntimeException("Can't install to device " + serial);
+            }
 		}
 	}
 
-	public void finish() {
+	public boolean finish() {
 		for (String serial : serials) {
 			String safeSerial = SpoonUtils.sanitizeSerial(serial);
 			summary.addResult(safeSerial, testRunners.get(serial).finish());
 		}
-		render(summary.end().build());
+        SpoonSummary build = summary.end().build();
+        render(build);
 		AndroidDebugBridge.terminate();
+        return parseOverallSuccess(build);
 	}
 
 	public void runTests(final String className) {

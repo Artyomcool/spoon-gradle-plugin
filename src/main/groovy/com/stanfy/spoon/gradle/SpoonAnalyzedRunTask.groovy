@@ -9,7 +9,7 @@ import groovy.transform.PackageScope
 import javassist.ClassClassPath
 import javassist.ClassPool
 import javassist.CtClass
-import javassist.CtMethod
+import javassist.Modifier
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.*
@@ -139,7 +139,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         def stream = file.newInputStream()
         try {
           def clazz = pool.makeClass(stream)
-          if (clazz.subclassOf(test)) {
+          if (!Modifier.isAbstract(clazz.modifiers) && clazz.subclassOf(test)) {
             classesToRun.add(clazz)
           }
         } finally {
@@ -214,7 +214,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
       }
 
     } finally {
-      runner.finish()
+      success &= runner.finish()
     }
 
     if (!success && !ignoreFailures) {
