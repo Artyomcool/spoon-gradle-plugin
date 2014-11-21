@@ -1,11 +1,12 @@
 package com.squareup.spoon;
 
-import com.android.ddmlib.*;
+import com.android.ddmlib.FileListingService;
+import com.android.ddmlib.IDevice;
+import com.android.ddmlib.InstallException;
+import com.android.ddmlib.SyncService;
 import com.android.ddmlib.logcat.LogCatMessage;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
-import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
-import com.android.ddmlib.testrunner.TestIdentifier;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;

@@ -4,13 +4,11 @@ import com.android.ddmlib.*;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.google.common.base.Strings;
 import com.squareup.spoon.html.HtmlRenderer;
-import junit.swingui.MacProgressBar;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -19,7 +17,6 @@ import static com.squareup.spoon.SpoonInstrumentationInfo.parseFromFile;
 import static com.squareup.spoon.SpoonLogger.logDebug;
 import static com.squareup.spoon.SpoonLogger.logInfo;
 import static com.squareup.spoon.SpoonUtils.obtainRealDevice;
-import static java.util.Collections.synchronizedSet;
 
 /** Represents a collection of devices and the test configuration to be executed. */
 public class IncrementalSpoonRunner {
@@ -125,7 +122,7 @@ public class IncrementalSpoonRunner {
 
 	public void runTests(final String className, final String methodName) {
 		int targetCount = serials.size();
-        logInfo("Executing %s.%s on %d device(s).", className, methodName, targetCount);
+        logInfo("Executing %s#%s on %d device(s).", className, methodName, targetCount);
 
 		if (testSize != null) {
 			summary.setTestSize(testSize);

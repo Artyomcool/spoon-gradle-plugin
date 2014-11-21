@@ -16,7 +16,7 @@ targetCompatibility = 1.6
 
 allprojects {
   group = 'com.stanfy.spoon'
-  version = '0.10.8'
+  version = '0.10.9'
 }
 
 task wrapper(type: Wrapper) {

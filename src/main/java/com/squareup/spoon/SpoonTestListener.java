@@ -10,6 +10,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.squareup.spoon.SpoonLogger.logDebug;
 import static com.squareup.spoon.SpoonLogger.logError;
+import static com.squareup.spoon.SpoonLogger.logInfo;
 
 /** Marshals an {@link ITestRunListener}'s output to a {@link DeviceResult.Builder}. */
 final class SpoonTestListener implements ITestRunListener {
@@ -54,6 +55,7 @@ final class SpoonTestListener implements ITestRunListener {
 			case ERROR:
 				logDebug(debug, "error %s", trace);
 				methodResult.markTestAsError(trace);
+                logInfo("Failed " + test);
 				break;
 			default:
 				throw new IllegalArgumentException("Unknown test failure status: " + status);
