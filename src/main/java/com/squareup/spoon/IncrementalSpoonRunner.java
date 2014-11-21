@@ -125,7 +125,7 @@ public class IncrementalSpoonRunner {
 
 	public void runTests(final String className, final String methodName) {
 		int targetCount = serials.size();
-		logInfo("Executing instrumentation suite on %d device(s).", targetCount);
+        logInfo("Executing %s.%s on %d device(s).", className, methodName, targetCount);
 
 		if (testSize != null) {
 			summary.setTestSize(testSize);
