@@ -73,6 +73,7 @@ final class SpoonTestListener implements ITestRunListener {
 		}
 		DeviceTestResult.Builder methodResultBuilder = methodResult.endTest();
 		result.addTestResultBuilder(DeviceTest.from(test), methodResultBuilder);
+        logInfo("Passed " + test);
 	}
 
 	@Override public void testRunFailed(String errorMessage) {
