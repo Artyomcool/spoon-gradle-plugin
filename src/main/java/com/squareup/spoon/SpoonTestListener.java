@@ -38,31 +38,40 @@ final class SpoonTestListener implements ITestRunListener {
 		methodResults.put(testIdentifierAdapter.adapt(test), methodResult);
 	}
 
-	@Override public void testFailed(TestFailure status, TestIdentifier test, String trace) {
-		logDebug(debug, "test=%s", test);
-		test = testIdentifierAdapter.adapt(test);
-		DeviceTestResult.Builder methodResult = methodResults.get(test);
-		if (methodResult == null) {
-			logError("unknown test=%s", test);
-			methodResult = new DeviceTestResult.Builder();
-			methodResults.put(test, methodResult);
-		}
-		switch (status) {
-			case FAILURE:
-				logDebug(debug, "failed %s", trace);
-				methodResult.markTestAsFailed(trace);
-				break;
-			case ERROR:
-				logDebug(debug, "error %s", trace);
-				methodResult.markTestAsError(trace);
-                logInfo("Failed " + test);
-				break;
-			default:
-				throw new IllegalArgumentException("Unknown test failure status: " + status);
-		}
-	}
+	@Override public void testFailed(TestIdentifier test, String trace) {
+        logDebug(debug, "test=%s", test);
+        test = testIdentifierAdapter.adapt(test);
+        DeviceTestResult.Builder methodResult = methodResults.get(test);
+        if (methodResult == null) {
+            logError("unknown test=%s", test);
+            methodResult = new DeviceTestResult.Builder();
+            methodResults.put(test, methodResult);
+        }
+        logDebug(debug, "error %s", trace);
+        methodResult.markTestAsError(trace);
+        logInfo("Failed " + test);
+    }
 
-	@Override public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
+    @Override
+    public void testAssumptionFailure(TestIdentifier test, String trace) {
+        logDebug(debug, "test=%s", test);
+        test = testIdentifierAdapter.adapt(test);
+        DeviceTestResult.Builder methodResult = methodResults.get(test);
+        if (methodResult == null) {
+            logError("unknown test=%s", test);
+            methodResult = new DeviceTestResult.Builder();
+            methodResults.put(test, methodResult);
+        }
+        logDebug(debug, "failed %s", trace);
+        methodResult.markTestAsFailed(trace);
+    }
+
+    @Override
+    public void testIgnored(TestIdentifier test) {
+
+    }
+
+    @Override public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
 		logDebug(debug, "test=%s", test);
 		test = testIdentifierAdapter.adapt(test);
 		DeviceTestResult.Builder methodResult = methodResults.get(test);

@@ -2,7 +2,9 @@ package com.stanfy.spoon.gradle
 
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
+import com.android.builder.model.Variant
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -146,7 +148,7 @@ class SpoonPlugin implements Plugin<Project> {
     task.outputs.upToDateWhen { false }
     task.configure {
       testClasses = variant.javaCompile.destinationDir
-      packageName = variant.testedVariant.packageName
+      packageName = variant.testedVariant.applicationId
       orderedTestClasses = []
     }
   }
@@ -157,8 +159,8 @@ class SpoonPlugin implements Plugin<Project> {
 
     task.configure {
       group = JavaBasePlugin.VERIFICATION_GROUP
-      applicationApk = variant.testedVariant.outputFile
-      instrumentationApk = variant.outputFile
+      applicationApk = firstApk(variant.testedVariant)
+      instrumentationApk = firstApk(variant)
 
       File outputBase = config.baseOutputDir
       if (!outputBase) {
@@ -175,6 +177,17 @@ class SpoonPlugin implements Plugin<Project> {
 
       dependsOn variant.assemble, variant.testedVariant.assemble
     }
+  }
+
+  private static File firstApk(BaseVariant variant) {
+    def file = null;
+    variant.outputs.each { output ->
+      def outputFile = output.outputFile
+      if (outputFile != null && outputFile.name.endsWith('.apk')) {
+        file = outputFile
+      }
+    }
+    file
   }
 
 }

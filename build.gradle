@@ -16,7 +16,7 @@ targetCompatibility = 1.6
 
 allprojects {
   group = 'com.stanfy.spoon'
-  version = '0.10.10'
+  version = '0.11.1'
 }
 
 task wrapper(type: Wrapper) {
@@ -48,7 +48,7 @@ dependencies {
 
   compile 'com.squareup.spoon:spoon-runner:1.1.1'
 
-  compile 'com.android.tools.build:gradle:0.8.1'
+  compile 'com.android.tools.build:gradle:0.14.4'
 
   compile 'javassist:javassist:3.12.1.GA'
 
