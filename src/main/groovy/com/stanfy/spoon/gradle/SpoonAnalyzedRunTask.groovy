@@ -33,7 +33,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
   private static final String SPOON_DEP_NAME = "com.squareup.spoon:$SPOON_RUNNER_ARTIFACT"
 
   /** Logger. */
-  private static final Logger LOG = LoggerFactory.getLogger(SpoonAnalyzedRunTask.class)
+  public static final Logger LOG = LoggerFactory.getLogger(SpoonAnalyzedRunTask.class)
 
   /** A title for the output website. */
   @Input
@@ -210,18 +210,13 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             }
             runner.runTests(name, method.name)
           }
+           else if (method.name.startsWith('bug')) {
+              runner.ignoreTests(name + "#" + method.name + " wait for repair bug")
+          }
+            else if (method.name.startsWith('future')) {
+              runner.ignoreTests(name + "#" + method.name + " wait new feature")
+          }
         }
-          methods.each { method ->
-              if (method.name.startsWith('bug')) {
-                  LOG.info("Wait for repair bug: ", method.name)
-              }
-          }
-
-          methods.each { method ->
-              if (method.name.startsWith('future')) {
-                  LOG.info("Wait new feature: ", method.name)
-              }
-          }
       }
 
     } finally {
