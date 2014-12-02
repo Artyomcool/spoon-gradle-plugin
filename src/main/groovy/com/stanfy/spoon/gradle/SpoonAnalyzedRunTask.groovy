@@ -211,6 +211,17 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             runner.runTests(name, method.name)
           }
         }
+          methods.each { method ->
+              if (method.name.startsWith('bug')) {
+                  LOG.info("Wait for repair bug: ", method.name)
+              }
+          }
+
+          methods.each { method ->
+              if (method.name.startsWith('future')) {
+                  LOG.info("Wait new feature: ", method.name)
+              }
+          }
       }
 
     } finally {
