@@ -152,10 +152,11 @@ public class IncrementalSpoonRunner {
 		new HtmlRenderer(summary, SpoonUtils.GSON, output).render();
 	}
 
-	public void clearData(String packageName) throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+	public void clearData(String packageName) throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException, InterruptedException {
 		for (String serial : serials) {
 			IDevice device = obtainRealDevice(adb, serial);
 			device.executeShellCommand("pm clear " + packageName, new NullOutputReceiver());
+            Thread.sleep(2000);
 		}
 	}
 
