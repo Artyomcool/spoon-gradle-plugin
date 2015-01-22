@@ -128,7 +128,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
       def test = pool.makeClass(InstrumentationTestCase.name)
       pool.appendClassPath(new ClassClassPath(InstrumentationTestCase))
 
-      def classesToRun = new ArrayList<CtClass>();
+      def classesToCheck = new ArrayList<CtClass>();
       testClasses.eachFileRecurse { def file ->
         if (file.directory) {
           return
@@ -137,20 +137,23 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         def stream = file.newInputStream()
         try {
           def clazz = pool.makeClass(stream)
-          if (!Modifier.isAbstract(clazz.modifiers) && clazz.subclassOf(test)) {
-            classesToRun.add(clazz)
-          }
+          classesToCheck.add(clazz);
         } finally {
           stream.close()
+        }
+      }
+
+      def classesToRun = new ArrayList<CtClass>();
+      classesToCheck.each { def clazz ->
+        if (!Modifier.isAbstract(clazz.modifiers) && clazz.subclassOf(test)) {
+          classesToRun.add(clazz)
         }
       }
 
       classesToRun.sort { o1,o2 ->
         if (orderedTestClasses) {
           int pos1 = orderedTestClasses.findIndexOf { it.contentEquals(o1.name) }
-            runner.classTests("Classes to run sort1 $o1.name")
-            int pos2 = orderedTestClasses.findIndexOf { it.contentEquals(o2.name) }
-            runner.classTests("Classes to run sort2 $o2.name")
+          int pos2 = orderedTestClasses.findIndexOf { it.contentEquals(o2.name) }
             if (pos1 != pos2) {
             return Integer.compare(pos1 == -1 ? Integer.MAX_VALUE : pos1, pos2 == -1 ? Integer.MAX_VALUE : pos2)
           }
@@ -175,8 +178,6 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         def stop2 = analyze2.forceStopAllTests()
         return -Boolean.compare(stop1, stop2)
       }
-
-        runner.classTests("classes $classesToRun")
 
       classesToRun.each {
         def name = it.name
