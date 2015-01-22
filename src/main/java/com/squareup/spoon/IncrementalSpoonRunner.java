@@ -124,6 +124,10 @@ public class IncrementalSpoonRunner {
         logInfo(text);
     }
 
+    public void classTests(String text) {
+        logInfo(text);
+    }
+
 	public void runTests(final String className, final String methodName) {
 		int targetCount = serials.size();
         logInfo("Executing %s#%s on %d device(s).", className, methodName, targetCount);

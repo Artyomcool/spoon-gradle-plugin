@@ -1,5 +1,4 @@
 package com.stanfy.spoon.gradle
-
 import android.test.InstrumentationTestCase
 import com.squareup.spoon.IncrementalSpoonRunner
 import com.stanfy.spoon.annotations.Analyze
@@ -15,7 +14,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.tasks.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 /**
  * Task for using SpoonRunner.
  */
@@ -150,8 +148,10 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
       classesToRun.sort { o1,o2 ->
         if (orderedTestClasses) {
           int pos1 = orderedTestClasses.findIndexOf { it.contentEquals(o1.name) }
-          int pos2 = orderedTestClasses.findIndexOf { it.contentEquals(o2.name) }
-          if (pos1 != pos2) {
+            runner.classTests("Classes to run sort1 $o1.name")
+            int pos2 = orderedTestClasses.findIndexOf { it.contentEquals(o2.name) }
+            runner.classTests("Classes to run sort2 $o2.name")
+            if (pos1 != pos2) {
             return Integer.compare(pos1 == -1 ? Integer.MAX_VALUE : pos1, pos2 == -1 ? Integer.MAX_VALUE : pos2)
           }
         }
@@ -175,6 +175,8 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         def stop2 = analyze2.forceStopAllTests()
         return -Boolean.compare(stop1, stop2)
       }
+
+        runner.classTests("classes $classesToRun")
 
       classesToRun.each {
         def name = it.name
