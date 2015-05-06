@@ -33,12 +33,12 @@ class SpoonPlugin implements Plugin<Project> {
     project.extensions.add "spoon", SpoonExtension
 
     def spoonTask = project.task("spoon") {
-      group = JavaBasePlugin.VERIFICATION_GROUP
+      group = "spoon"
       description = "Runs all the instrumentation test variations on all the connected devices"
     }
 
     def spoonAnalyzedTask = project.task("spoonAnalyzed") {
-      group = JavaBasePlugin.VERIFICATION_GROUP
+      group = "spoon"
       description = "Runs all the instrumentation test variations on all the connected devices with analyzing classes" +
               "for optionally clearing data and killing the app"
     }
@@ -161,7 +161,7 @@ class SpoonPlugin implements Plugin<Project> {
     E task = project.tasks.create(name, clazz)
 
     task.configure {
-      group = JavaBasePlugin.VERIFICATION_GROUP
+      group = "spoon"
       applicationApk = firstApk(variant.testedVariant)
       instrumentationApk = firstApk(variant)
 

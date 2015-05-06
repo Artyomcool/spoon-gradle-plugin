@@ -3,6 +3,7 @@ package com.squareup.spoon;
 import com.android.ddmlib.*;
 import com.android.ddmlib.logcat.LogCatMessage;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
+import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.google.common.base.Strings;
@@ -16,10 +17,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.squareup.spoon.Spoon.SPOON_SCREENSHOTS;
 import static com.squareup.spoon.SpoonLogger.*;
@@ -49,8 +47,11 @@ public class IncrementalSpoonDeviceRunner {
 	private DeviceResult.Builder result;
 	private SpoonDeviceLogger deviceLogger;
 	private IDevice device;
+    private XmlTestRunListener xmlTestRunListener;
 
-	/**
+    private boolean started;
+
+    /**
 	 * Create a test runner for a single device.
 	 *
 	 * @param sdk Path to the local Android SDK directory.
@@ -82,6 +83,9 @@ public class IncrementalSpoonDeviceRunner {
 		this.work = getFile(output, TEMP_DIR, serial);
 		this.junitReport = getFile(output, JUNIT_DIR, serial + ".xml");
 		this.imageDir = getFile(output, IMAGE_DIR, serial);
+
+        xmlTestRunListener = new XmlTestRunListener(junitReport);
+        xmlTestRunListener.getRunResult().setAggregateMetrics(true);
 	}
 
 	public boolean install(IDevice device) {
@@ -151,13 +155,58 @@ public class IncrementalSpoonDeviceRunner {
 			if (testSize != null) {
 				runner.setTestSize(testSize);
 			}
-			runner.run(
+            xmlTestRunListener.getRunResult().setRunComplete(false);
+            runner.run(
                     new SpoonTestListener(result, debug, TestIdentifierAdapter.JUNIT),
-                    new XmlTestRunListener(junitReport) {
+                    new ITestRunListener() {
+                        @Override
+                        public void testRunStarted(String runName, int testCount) {
+                            if (!started) {
+                                started = true;
+                                xmlTestRunListener.testRunStarted(runName, testCount);
+                            }
+                        }
+
+                        @Override
+                        public void testStarted(TestIdentifier test) {
+                            xmlTestRunListener.testStarted(test);
+
+                        }
+
+                        @Override
+                        public void testFailed(TestIdentifier test, String trace) {
+                            xmlTestRunListener.testFailed(test, trace);
+                        }
+
+                        @Override
+                        public void testAssumptionFailure(TestIdentifier test, String trace) {
+                            xmlTestRunListener.testAssumptionFailure(test, trace);
+                        }
+
+                        @Override
+                        public void testIgnored(TestIdentifier test) {
+                            xmlTestRunListener.testIgnored(test);
+                        }
+
                         @Override
                         public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
                             takeScreenshot(className, methodName);
-                            super.testEnded(test, testMetrics);
+                            xmlTestRunListener.testEnded(test, testMetrics);
+                        }
+
+                        @Override
+                        public void testRunFailed(String errorMessage) {
+                            xmlTestRunListener.testRunFailed(errorMessage);
+                        }
+
+                        @Override
+                        public void testRunStopped(long elapsedTime) {
+                            xmlTestRunListener.testRunStopped(elapsedTime);
+                        }
+
+                        @Override
+                        public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
+                            xmlTestRunListener.getRunResult().testRunEnded(elapsedTime, runMetrics);
                         }
                     }
             );
@@ -199,6 +248,8 @@ public class IncrementalSpoonDeviceRunner {
     }
 
     public DeviceResult finish() {
+        xmlTestRunListener.getRunResult().setRunComplete(false);
+        xmlTestRunListener.testRunEnded(0, new HashMap<String, String>());
 
 		String appPackage = instrumentationInfo.getApplicationPackage();
 
