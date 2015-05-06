@@ -143,6 +143,7 @@ class SpoonPlugin implements Plugin<Project> {
   }
 
   private static SpoonAnalyzedRunTask createAnalyzedTask(String name, TestVariant variant, Project project) {
+    SpoonExtension config = project.spoon
     SpoonAnalyzedRunTask task = createBaseTask(name, variant, project, SpoonAnalyzedRunTask)
 
     task.outputs.upToDateWhen { false }
@@ -150,6 +151,8 @@ class SpoonPlugin implements Plugin<Project> {
       testClasses = variant.javaCompile.destinationDir
       packageName = variant.testedVariant.applicationId
       orderedTestClasses = []
+      devices = config.devices
+      allDevices = !config.devices
     }
   }
 
