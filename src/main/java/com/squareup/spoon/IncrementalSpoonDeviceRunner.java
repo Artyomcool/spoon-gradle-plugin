@@ -142,7 +142,7 @@ public class IncrementalSpoonDeviceRunner {
 
 		// Run all the tests! o/
 		try {
-			logDebug(debug, "About to actually run tests for [%s]", serial);
+			logInfo("About to actually run tests for [%s]", serial);
 			RemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(testPackage, testRunner, device);
 			runner.setMaxtimeToOutputResponse(adbTimeout);
 			if (!Strings.isNullOrEmpty(className)) {
