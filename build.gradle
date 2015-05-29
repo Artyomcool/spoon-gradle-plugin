@@ -15,8 +15,8 @@ sourceCompatibility = 1.6
 targetCompatibility = 1.6
 
 allprojects {
-  group = 'com.stanfy.spoon'
-  version = '0.11.14'
+  group = 'ru.mail.spoon'
+  version = '1.0.0'
 }
 
 task wrapper(type: Wrapper) {
@@ -53,6 +53,8 @@ dependencies {
   compile 'javassist:javassist:3.12.1.GA'
 
   compile 'com.google.android:android-test:4.1.1.4'
+
+  compile 'junit:junit:4.12'
 
   testCompile 'org.spockframework:spock-core:0.7-groovy-1.8'
 }

@@ -1,17 +1,18 @@
 package com.stanfy.spoon.gradle
 import android.test.InstrumentationTestCase
 import com.squareup.spoon.IncrementalSpoonRunner
-import com.stanfy.spoon.annotations.Analyze
-import com.stanfy.spoon.annotations.ClearData
-import com.stanfy.spoon.annotations.ForceStop
+import com.stanfy.spoon.annotations.Action
+import com.stanfy.spoon.annotations.EveryTest
+import com.stanfy.spoon.annotations.BeforeTest
+import com.stanfy.spoon.annotations.AfterTest
 import groovy.transform.PackageScope
 import javassist.ClassClassPath
 import javassist.ClassPool
-import javassist.CtClass
 import javassist.Modifier
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.*
+import org.junit.Ignore
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 /**
@@ -24,7 +25,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
   static final String TEST_SIZE_ALL = "all";
 
   /** Plugin dependency name. */
-  private static final String PLUGIN_DEP_NAME = "com.stanfy.spoon:spoon-gradle-plugin"
+  private static final String PLUGIN_DEP_NAME = "ru.mail.spoon:spoon-gradle-plugin"
   /** Spoon runner artifact name. */
   private static final String SPOON_RUNNER_ARTIFACT = "spoon-runner"
   /** Spoon dependency name. */
@@ -128,7 +129,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
       def test = pool.makeClass(InstrumentationTestCase.name)
       pool.appendClassPath(new ClassClassPath(InstrumentationTestCase))
 
-      def classesToCheck = new ArrayList<CtClass>();
+      def classesToCheck = [];
       testClasses.eachFileRecurse { def file ->
         if (file.directory) {
           return
@@ -143,83 +144,67 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         }
       }
 
-      def classesToRun = new ArrayList<CtClass>();
+      def foundClasses = [:];
       classesToCheck.each { def clazz ->
         if (!Modifier.isAbstract(clazz.modifiers) && clazz.subclassOf(test)) {
-          classesToRun.add(clazz)
+          foundClasses.put(clazz.getName(), clazz)
         }
       }
 
-      classesToRun.sort { o1,o2 ->
-        if (orderedTestClasses) {
-          int pos1 = orderedTestClasses.findIndexOf { it.contentEquals(o1.name) }
-          int pos2 = orderedTestClasses.findIndexOf { it.contentEquals(o2.name) }
-            if (pos1 != pos2) {
-            return Integer.compare(pos1 == -1 ? Integer.MAX_VALUE : pos1, pos2 == -1 ? Integer.MAX_VALUE : pos2)
+      def classesToRun = []
+      if (orderedTestClasses) {
+        orderedTestClasses.each {
+          def clazz = foundClasses[it]
+          if (!clazz) {
+            throw new IllegalArgumentException("No test with name $it found")
           }
+          classesToRun << clazz
         }
-
-        Analyze analyze1 = o1.getAnnotation(Analyze) as Analyze
-        Analyze analyze2 = o2.getAnnotation(Analyze) as Analyze
-        if (analyze1 == null) {
-          return analyze2 == null ? 0 : 1
-        }
-        if (analyze2 == null) {
-          return -1
-        }
-
-        def clear1 = analyze1.clearAllTests()
-        def clear2 = analyze2.clearAllTests()
-        if (clear1 != clear2) {
-          return -Boolean.compare(clear1, clear2)
-        }
-
-        def stop1 = analyze1.forceStopAllTests()
-        def stop2 = analyze2.forceStopAllTests()
-        return -Boolean.compare(stop1, stop2)
+      } else {
+        classesToRun = foundClasses.values()
       }
-
-      classesToRun.each {
-        def name = it.name
-        if (orderedTestClasses) {
-          if (!orderedTestClasses.find { it.contentEquals(name) }) {
-            return
+      logger.info "$classesToRun"
+      def lastAction = Action.None
+      new TestSorter(classesToRun).tests.each { method ->
+        Ignore ignore = method.getAnnotation(Ignore) as Ignore
+        def name = method.declaringClass.name
+        if (ignore) {
+          String reason = ignore.value()
+          if (reason) {
+            reason = " ($reason)"
           }
-        }
-
-        Analyze analyze = it.getAnnotation(Analyze) as Analyze
-        if (!analyze) {
-          runner.runTests(name)
+          runner.ignoreTests("ignore $name#$method.name$reason")
           return
         }
-
-        def methods = it.methods
-        if (!analyze.respectTestsOrder()) {
-          methods = methods.sort { a, b ->
-            def res = -Boolean.compare(a.hasAnnotation(ClearData), b.hasAnnotation(ClearData))
-            if (res != 0) {
-              return res
-            }
-            return -Boolean.compare(a.hasAnnotation(ForceStop), b.hasAnnotation(ForceStop))
-          }
+        EveryTest annotation = method.declaringClass.getAnnotation(EveryTest) as EveryTest
+        def before = annotation ? annotation.before() : Action.None
+        def after = annotation ? annotation.after() : Action.None
+        if (method.hasAnnotation(BeforeTest)) {
+          before = method.getAnnotation(BeforeTest).value()
         }
-
-        methods.each { method ->
-          if (method.name.startsWith('test')) {
-            if (analyze.clearAllTests() || method.hasAnnotation(ClearData)) {
+        if (method.hasAnnotation(AfterTest)) {
+          after = method.getAnnotation(AfterTest).value()
+        }
+        if (before.ordinal() > lastAction.ordinal()) {
+          switch (before) {
+            case Action.ClearData:
               runner.clearData packageName
-            } else if (analyze.forceStopAllTests() || method.hasAnnotation(ForceStop)) {
+              break
+            case Action.ForceStop:
               runner.forceStop packageName
-            }
-            runner.runTests(name, method.name)
-          }
-           else if (method.name.startsWith('bug')) {
-              runner.ignoreTests(name + "#" + method.name)
-          }
-            else if (method.name.startsWith('future')) {
-              runner.ignoreTests(name + "#" + method.name)
+              break
           }
         }
+        runner.runTests(name, method.name)
+        switch (after) {
+          case Action.ClearData:
+            runner.clearData packageName
+            break
+          case Action.ForceStop:
+            runner.forceStop packageName
+            break
+        }
+        lastAction = after
       }
 
     } finally {
