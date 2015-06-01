@@ -2,10 +2,9 @@ package com.stanfy.spoon.gradle
 
 import com.stanfy.spoon.annotations.Action
 import com.stanfy.spoon.annotations.AfterTest
-import com.stanfy.spoon.annotations.EveryTest
 import com.stanfy.spoon.annotations.BeforeTest
+import com.stanfy.spoon.annotations.EveryTest
 import javassist.CtClass
-import javassist.CtMethod
 import org.junit.Ignore
 import org.junit.Test
 
@@ -25,7 +24,7 @@ class TestSorter {
 
     private def sorted = []
 
-    TestSorter(Collection<CtClass> classes) {
+    TestSorter(Collection<CtClass> classes, boolean sort) {
         criteriaMap[[Action.ClearData,  Action.ClearData]]  =   clearAlways
         criteriaMap[[Action.ClearData,  Action.ForceStop]]  =   clearBeforeStopAfter
         criteriaMap[[Action.ClearData,  Action.None]]       =   clearBefore
@@ -38,7 +37,11 @@ class TestSorter {
         criteriaMap[[Action.None,       Action.ForceStop]]  =   stopAfter
         criteriaMap[[Action.None,       Action.None]]       =   doNothing
 
-        init(classes)
+        if (sort) {
+            init(classes)
+        } else {
+            sorted.addAll(classes)
+        }
     }
 
     private def init(Collection<CtClass> classes) {

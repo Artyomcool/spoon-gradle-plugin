@@ -165,7 +165,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
       }
       logger.info "$classesToRun"
       def lastAction = Action.None
-      new TestSorter(classesToRun).tests.each { method ->
+      new TestSorter(classesToRun, !orderedTestClasses).tests.each { method ->
         Ignore ignore = method.getAnnotation(Ignore) as Ignore
         def name = method.declaringClass.name
         if (ignore) {
