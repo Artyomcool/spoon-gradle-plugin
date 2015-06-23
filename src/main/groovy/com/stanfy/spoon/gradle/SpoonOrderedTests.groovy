@@ -8,6 +8,10 @@ class SpoonOrderedTests {
 
   List<String> classes
 
+  String backupPrefix
+
+  List<String> backups
+
   SpoonOrderedTests(String name) {
     this.name = name
   }

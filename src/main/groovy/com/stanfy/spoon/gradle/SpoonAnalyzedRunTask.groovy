@@ -61,12 +61,21 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
   @InputFile
   File applicationApk
 
+  /** Backup APK */
+  @InputFile
+  @Optional
+  File backupApk
+
   /** Application APK. */
   @InputDirectory
   File testClasses
 
   @Input
   List<String> orderedTestClasses
+
+  @Input
+  @Optional
+  List<File> backups
 
   /** Output directory. */
   @OutputDirectory
@@ -105,6 +114,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         .setAndroidSdk(project.android.sdkDirectory)
         .setClasspath(cp)
         .setNoAnimations(noAnimations)
+        .setBackupApk(backupApk)
 
     if (allDevices) {
       runBuilder.useAllAttachedDevices()
@@ -123,7 +133,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
 
     IncrementalSpoonRunner runner = runBuilder.build()
     try {
-      runner.init()
+      runner.install(false)
 
       def pool = ClassPool.default
       def test = pool.makeClass(InstrumentationTestCase.name)
@@ -185,6 +195,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
         if (method.hasAnnotation(AfterTest)) {
           after = method.getAnnotation(AfterTest).value()
         }
+        def useBackups = false
         if (before.ordinal() > lastAction.ordinal()) {
           switch (before) {
             case Action.ClearData:
@@ -193,9 +204,25 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             case Action.ForceStop:
               runner.forceStop packageName
               break
+            case Action.RestoreBackup:
+              useBackups = true
+              break
+            default:
+              throw new UnsupportedOperationException("Unsupported 'before' action: $before")
           }
         }
-        runner.runTests(name, method.name)
+        if (useBackups) {
+          if (!backups) {
+            throw new IllegalArgumentException("You must provide 'backupPrefix' and 'backups' in your orderedTests configuration to use Action.RestoreBackup")
+          }
+          backups.each { backup ->
+            runner.restoreBackup packageName, backup
+            runner.install(true)
+            runner.runTests(name, method.name)
+          }
+        } else {
+          runner.runTests(name, method.name)
+        }
         switch (after) {
           case Action.ClearData:
             runner.clearData packageName
@@ -203,6 +230,8 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
           case Action.ForceStop:
             runner.forceStop packageName
             break
+          default:
+            throw new UnsupportedOperationException("Unsupported 'after' action: $after")
         }
         lastAction = after
       }
