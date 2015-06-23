@@ -108,7 +108,7 @@ class SpoonPlugin implements Plugin<Project> {
           title = "$project.name $name ${variant.name}"
           description = "Runs instrumentation tests on all the connected devices and generates a report with screenshots with specified order, performs analyze of test allowing to clear data or kill the app"
         }
-        task.orderedTestClasses = tests.classes.collect { "${tests.suffix}.${it}" }
+        task.orderedTestClasses = tests.classes.collect { "$tests.classPrefix.$it" }
         task.backups = tests.backups.collect { new File("$tests.backupPrefix$it") }
 
         spoonOrderedTask.dependsOn task

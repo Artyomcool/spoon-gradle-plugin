@@ -4,7 +4,7 @@ class SpoonOrderedTests {
 
   String name
 
-  String suffix
+  String classPrefix
 
   List<String> classes
 

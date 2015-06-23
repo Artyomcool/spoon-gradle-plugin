@@ -16,7 +16,7 @@ targetCompatibility = 1.6
 
 allprojects {
   group = 'ru.mail.spoon'
-  version = '1.0.2'
+  version = '2.0.0'
 }
 
 task wrapper(type: Wrapper) {
