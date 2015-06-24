@@ -207,6 +207,8 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             case Action.RestoreBackup:
               useBackups = true
               break
+            case Action.None:
+              break
             default:
               throw new UnsupportedOperationException("Unsupported 'before' action: $before")
           }
@@ -230,6 +232,8 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             break
           case Action.ForceStop:
             runner.forceStop packageName
+            break
+          case Action.None:
             break
           default:
             throw new UnsupportedOperationException("Unsupported 'after' action: $after")
