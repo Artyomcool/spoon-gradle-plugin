@@ -216,6 +216,7 @@ class SpoonAnalyzedRunTask extends DefaultTask implements VerificationTask {
             throw new IllegalArgumentException("You must provide 'backupPrefix' and 'backups' in your orderedTests configuration to use Action.RestoreBackup")
           }
           backups.each { backup ->
+            runner.clearData packageName
             runner.restoreBackup packageName, backup
             runner.install(true)
             runner.runTests(name, method.name)
