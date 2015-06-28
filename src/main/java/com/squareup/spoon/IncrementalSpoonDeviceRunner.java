@@ -90,6 +90,10 @@ public class IncrementalSpoonDeviceRunner {
 
 	public boolean install(IDevice device, boolean allowDowngrade) {
 		this.device = device;
+
+		// Initiate device logging.
+		deviceLogger = new SpoonDeviceLogger(device);
+
 		result = new DeviceResult.Builder();
 		try {
 			// Now install the main application and the instrumentation application.
@@ -112,9 +116,6 @@ public class IncrementalSpoonDeviceRunner {
 			result.markInstallAsFailed(e.getMessage());
 			return false;
 		}
-
-		// Initiate device logging.
-		deviceLogger = new SpoonDeviceLogger(device);
 
 		result.startTests();
 
