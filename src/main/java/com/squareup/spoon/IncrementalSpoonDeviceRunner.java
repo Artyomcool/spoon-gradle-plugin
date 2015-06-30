@@ -88,12 +88,17 @@ public class IncrementalSpoonDeviceRunner {
         xmlTestRunListener.getRunResult().setAggregateMetrics(true);
 	}
 
-	public boolean install(IDevice device) {
+	public boolean install(IDevice device, boolean allowDowngrade) {
 		this.device = device;
+
+		// Initiate device logging.
+		deviceLogger = new SpoonDeviceLogger(device);
+
 		result = new DeviceResult.Builder();
 		try {
 			// Now install the main application and the instrumentation application.
-			String installError = device.installPackage(apk.getAbsolutePath(), true);
+			String downgradeFlag = allowDowngrade ? "-d" : "";
+			String installError = device.installPackage(apk.getAbsolutePath(), true, downgradeFlag);
 			if (installError != null) {
 				logInfo("[%s] app apk install failed.  Error [%s]", serial, installError);
 				result.markInstallAsFailed("Unable to install application APK.");
@@ -111,9 +116,6 @@ public class IncrementalSpoonDeviceRunner {
 			result.markInstallAsFailed(e.getMessage());
 			return false;
 		}
-
-		// Initiate device logging.
-		deviceLogger = new SpoonDeviceLogger(device);
 
 		result.startTests();
 

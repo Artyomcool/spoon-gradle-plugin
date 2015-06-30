@@ -4,11 +4,9 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
-import com.android.builder.model.Variant
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.plugins.JavaBasePlugin
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -110,7 +108,9 @@ class SpoonPlugin implements Plugin<Project> {
           title = "$project.name $name ${variant.name}"
           description = "Runs instrumentation tests on all the connected devices and generates a report with screenshots with specified order, performs analyze of test allowing to clear data or kill the app"
         }
-        task.orderedTestClasses = tests.classes.collect { "${tests.suffix}.${it}" }
+        task.orderedTestClasses = tests.classes.collect { "$tests.classPrefix.$it" }
+        task.backups = tests.backups.collect { new File("$tests.backupPrefix$it") }
+
         spoonOrderedTask.dependsOn task
       }
     }
@@ -151,6 +151,7 @@ class SpoonPlugin implements Plugin<Project> {
       testClasses = variant.javaCompile.destinationDir
       packageName = variant.testedVariant.applicationId
       orderedTestClasses = []
+      backupApk = config.backupApk
       devices = config.devices
       allDevices = !config.devices
     }

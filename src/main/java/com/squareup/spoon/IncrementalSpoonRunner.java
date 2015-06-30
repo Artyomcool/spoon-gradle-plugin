@@ -26,6 +26,7 @@ public class IncrementalSpoonRunner {
 	private final File androidSdk;
 	private final File applicationApk;
 	private final File instrumentationApk;
+	private final File backupApk;
 	private final File output;
 	private final boolean debug;
 	private final boolean noAnimations;
@@ -41,36 +42,36 @@ public class IncrementalSpoonRunner {
 	private final Map<String, IncrementalSpoonDeviceRunner> testRunners =
             new HashMap<String, IncrementalSpoonDeviceRunner>();
 
-	private IncrementalSpoonRunner(String title, File androidSdk, File applicationApk, File instrumentationApk,
-								   File output, boolean debug, boolean noAnimations, int adbTimeout, Set<String> serials,
-								   String classpath, String className, String methodName,
-								   IRemoteAndroidTestRunner.TestSize testSize, boolean failIfNoDeviceConnected) {
-		this.title = title;
-		this.androidSdk = androidSdk;
-		this.applicationApk = applicationApk;
-		this.instrumentationApk = instrumentationApk;
-		this.output = output;
-		this.debug = debug;
-		this.noAnimations = noAnimations;
-		this.adbTimeout = adbTimeout;
-		this.className = className;
-		this.methodName = methodName;
-		this.classpath = classpath;
-		this.testSize = testSize;
-		this.serials = serials;
-		this.failIfNoDeviceConnected = failIfNoDeviceConnected;
+	private IncrementalSpoonRunner(Builder builder) {
+		title = builder.title;
+		androidSdk = builder.androidSdk;
+		applicationApk = builder.applicationApk;
+		instrumentationApk = builder.instrumentationApk;
+		backupApk = builder.backupApk;
+		output = builder.output;
+		debug = builder.debug;
+		noAnimations = builder.noAnimations;
+		adbTimeout = builder.adbTimeout;
+		className = builder.className;
+		methodName = builder.methodName;
+		classpath = builder.classpath;
+		testSize = builder.testSize;
+		serials = builder.serials;
+		failIfNoDeviceConnected = builder.failIfNoDeviceConnected;
 	}
 
 	/**
-	 * Install and execute the tests on all specified devices.
+	 * Install the tests on all specified devices.
 	 *
 	 * @return {@code true} if there were no test failures or exceptions thrown.
 	 */
-	public void init() {
+	public void install(boolean allowDowngrade) {
 		checkArgument(applicationApk.exists(), "Could not find application APK.");
 		checkArgument(instrumentationApk.exists(), "Could not find instrumentation APK.");
 
-		adb = SpoonUtils.initAdb(androidSdk);
+		if (adb == null) {
+			adb = SpoonUtils.initAdb(androidSdk);
+		}
 
 		if (serials.isEmpty()) {
 			serials.addAll(SpoonUtils.findAllDevices(adb));
@@ -78,7 +79,6 @@ public class IncrementalSpoonRunner {
 		if (failIfNoDeviceConnected && serials.isEmpty()) {
 			throw new RuntimeException("No device(s) found.");
 		}
-
 
 		try {
 			FileUtils.deleteDirectory(output);
@@ -99,7 +99,7 @@ public class IncrementalSpoonRunner {
 			IncrementalSpoonDeviceRunner testRunner = getTestRunner(serial, testInfo);
 			testRunners.put(serial, testRunner);
 			IDevice device = SpoonUtils.obtainRealDevice(adb, serial);
-			if (!testRunner.install(device)) {
+			if (!testRunner.install(device, allowDowngrade)) {
                 throw new RuntimeException("Can't install to device " + serial);
             }
 		}
@@ -163,8 +163,30 @@ public class IncrementalSpoonRunner {
 	public void forceStop(String packageName) throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
 		for (String serial : serials) {
 			IDevice device = obtainRealDevice(adb, serial);
-			device.executeShellCommand("adb shell am force-stop " + packageName, new NullOutputReceiver());
+			device.executeShellCommand("am force-stop " + packageName, new NullOutputReceiver());
 		}
+	}
+
+	public void restoreBackup(String packageName, File backup) throws TimeoutException, AdbCommandRejectedException, SyncException, ShellCommandUnresponsiveException, IOException, InstallException {
+		checkNotNull(backupApk, "Backup APK is not defined");
+		checkArgument(backupApk.exists(), "Could not find backup APK: " + backupApk.getAbsolutePath());
+		checkNotNull(backup, "Backup file is not defined");
+		checkArgument(backup.exists(), "Could not find backup file: " + backup.getAbsolutePath());
+		for (String serial : serials) {
+			IDevice device = obtainRealDevice(adb, serial);
+			device.installPackage(backupApk.getAbsolutePath(), true);
+			String launcher = getLauncherComponent(device, packageName);
+			device.pushFile(backup.getAbsolutePath(), "/sdcard/" + backup.getName());
+			IShellOutputReceiver nullReceiver = new NullOutputReceiver();
+			device.executeShellCommand("am start -n " + launcher + " -e action RESTORE -e archive " + backup.getName(), nullReceiver);
+			device.executeShellCommand("while [ -f /sdcard/$archiveName ]; do sleep 1; done", nullReceiver);
+		}
+	}
+
+	private String getLauncherComponent(IDevice device, String packageName) throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+		LauncherComponentReceiver launcherComponentReceiver = new LauncherComponentReceiver();
+		device.executeShellCommand("dumpsys package " + packageName, launcherComponentReceiver);
+		return launcherComponentReceiver.getLauncherComponent();
 	}
 
 	/** Returns {@code false} if a test failed on any device. */
@@ -196,6 +218,7 @@ public class IncrementalSpoonRunner {
 		private File androidSdk;
 		private File applicationApk;
 		private File instrumentationApk;
+		private File backupApk;
 		private File output;
 		private boolean debug = false;
 		private Set<String> serials;
@@ -235,6 +258,11 @@ public class IncrementalSpoonRunner {
 			checkNotNull(apk, "Instrumentation APK path not specified.");
 			checkArgument(apk.exists(), "Instrumentation APK path does not exist.");
 			this.instrumentationApk = apk;
+			return this;
+		}
+
+		public Builder setBackupApk(File backupApk) {
+			this.backupApk = backupApk;
 			return this;
 		}
 
@@ -325,9 +353,7 @@ public class IncrementalSpoonRunner {
 						"Must specify class name if you're specifying a method name.");
 			}
 
-			return new IncrementalSpoonRunner(title, androidSdk, applicationApk, instrumentationApk, output, debug,
-					noAnimations, adbTimeout, serials, classpath, className, methodName, testSize,
-					failIfNoDeviceConnected);
+			return new IncrementalSpoonRunner(this);
 		}
 	}
 

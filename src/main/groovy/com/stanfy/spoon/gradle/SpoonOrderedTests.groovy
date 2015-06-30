@@ -4,9 +4,13 @@ class SpoonOrderedTests {
 
   String name
 
-  String suffix
+  String classPrefix
 
   List<String> classes
+
+  String backupPrefix
+
+  List<String> backups
 
   SpoonOrderedTests(String name) {
     this.name = name
