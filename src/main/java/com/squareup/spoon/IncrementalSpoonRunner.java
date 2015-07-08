@@ -76,6 +76,9 @@ public class IncrementalSpoonRunner {
 		if (serials.isEmpty()) {
 			serials.addAll(SpoonUtils.findAllDevices(adb));
 		}
+
+		summary = new SpoonSummary.Builder().setTitle(title).start();
+
 		if (failIfNoDeviceConnected && serials.isEmpty()) {
 			throw new RuntimeException("No device(s) found.");
 		}
@@ -85,8 +88,6 @@ public class IncrementalSpoonRunner {
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to clean output directory: " + output, e);
 		}
-
-		summary = new SpoonSummary.Builder().setTitle(title).start();
 
 		final SpoonInstrumentationInfo testInfo = parseFromFile(instrumentationApk);
 
