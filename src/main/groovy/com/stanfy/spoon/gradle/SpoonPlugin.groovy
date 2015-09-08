@@ -132,7 +132,7 @@ class SpoonPlugin implements Plugin<Project> {
   private static SpoonRunTask createTask(final String name, final TestVariant variant, final Project project) {
     SpoonRunTask task = createBaseTask(name, variant, project, SpoonRunTask)
 
-    task.configure {
+    (SpoonRunTask) task.configure {
       if (project.spoon.className) {
         className = project.spoon.className
         if (project.spoon.methodName) {
@@ -147,7 +147,7 @@ class SpoonPlugin implements Plugin<Project> {
     SpoonAnalyzedRunTask task = createBaseTask(name, variant, project, SpoonAnalyzedRunTask)
 
     task.outputs.upToDateWhen { false }
-    task.configure {
+    (SpoonAnalyzedRunTask) task.configure {
       testClasses = variant.javaCompile.destinationDir
       packageName = variant.testedVariant.applicationId
       orderedTestClasses = []
@@ -161,7 +161,7 @@ class SpoonPlugin implements Plugin<Project> {
     SpoonExtension config = project.spoon
     E task = project.tasks.create(name, clazz)
 
-    task.configure {
+    (E) task.configure {
       group = "spoon"
       applicationApk = firstApk(variant.testedVariant)
       instrumentationApk = firstApk(variant)
