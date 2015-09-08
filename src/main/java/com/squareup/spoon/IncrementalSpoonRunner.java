@@ -249,7 +249,7 @@ public class IncrementalSpoonRunner {
 		/** Path to application APK. */
 		public Builder setApplicationApk(File apk) {
 			checkNotNull(apk, "APK path not specified.");
-			checkArgument(apk.exists(), "APK path does not exist.");
+			checkArgument(apk.exists(), "APK path does not exist: " + apk.getAbsolutePath());
 			this.applicationApk = apk;
 			return this;
 		}
@@ -257,7 +257,7 @@ public class IncrementalSpoonRunner {
 		/** Path to instrumentation APK. */
 		public Builder setInstrumentationApk(File apk) {
 			checkNotNull(apk, "Instrumentation APK path not specified.");
-			checkArgument(apk.exists(), "Instrumentation APK path does not exist.");
+			checkArgument(apk.exists(), "Instrumentation APK path does not exist: " + apk.getAbsolutePath());
 			this.instrumentationApk = apk;
 			return this;
 		}

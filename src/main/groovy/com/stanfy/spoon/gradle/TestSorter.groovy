@@ -64,7 +64,11 @@ class TestSorter {
                 }
             }
 
-            def list = criteriaMap[[before, after]]
+            def actions = [before, after]
+            def list = criteriaMap[actions]
+            if (list == null) {
+                throw new IllegalStateException("No criteria for $actions")
+            }
             list << it
         }
 

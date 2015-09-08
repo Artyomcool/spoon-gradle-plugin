@@ -184,12 +184,12 @@ class SpoonPlugin implements Plugin<Project> {
   }
 
   private static File firstApk(BaseVariant variant) {
-    def file = null;
-    variant.outputs.each { output ->
-      def outputFile = output.outputFile
-      if (outputFile != null && outputFile.name.endsWith('.apk')) {
-        file = outputFile
-      }
+    def outputFiles = variant.outputs.collect().outputFile
+    def file = outputFiles.find { outputFile ->
+      outputFile.name.endsWith('.apk')
+    }
+    if (!file) {
+      throw new IllegalArgumentException("Build variant ${variant.name} does not contains APK files in the outputs: $outputFiles")
     }
     file
   }
