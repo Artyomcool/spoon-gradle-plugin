@@ -107,13 +107,18 @@ public class IncrementalSpoonRunner {
 	}
 
 	public boolean finish() {
+		AndroidDebugBridge.terminate();
+
+		if (summary == null) {
+			return false;
+		}
+
 		for (String serial : serials) {
 			String safeSerial = SpoonUtils.sanitizeSerial(serial);
 			summary.addResult(safeSerial, testRunners.get(serial).finish());
 		}
         SpoonSummary build = summary.end().build();
         render(build);
-		AndroidDebugBridge.terminate();
         return parseOverallSuccess(build);
 	}
 
